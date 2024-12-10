@@ -2,8 +2,9 @@
 
 #include <SDL2/SDL.h> 
 #include <stdio.h>
+#include <SDL_image.h>
 
-// clang++ main.c -I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2
+// clang++ main.c -I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2 -I/Library/Frameworks/SDL2_image.framework/Headers  -framework SDL2_image
 
 int clamp(int x,int min, int max) {
     if (x<min) {
@@ -19,30 +20,48 @@ int clamp(int x,int min, int max) {
     
 }
 
+void renderText(char txt[10]) {
+    return;
+}
+
 int main(int argc, char* argv[]){
 
-    SDL_Window* window=nullptr;
+    Uint32 black = 255;
 
-    if(SDL_Init(SDL_INIT_VIDEO) < 0){
-        std::cout << "SDL could not be initialized: " <<
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        std::cout << "sdl brokey :(" <<
                   SDL_GetError();
-    }else{
-        std::cout << "SDL video system is ready to go\n";
+    } else {
+        std::cout << "sdl worky!\n";
     }
 
-    window = SDL_CreateWindow("I LOVE SDL !!!111",20, 20, 400,400,SDL_WINDOW_SHOWN);
+    SDL_Window* window = SDL_CreateWindow("C Pong",20, 20, 400,400,SDL_WINDOW_SHOWN);
+
 
     SDL_Renderer* renderer = nullptr;
     renderer = SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED);
 
+    SDL_Surface* screenSurface = SDL_GetWindowSurface(window);
 
-// variables !!
+    IMG_Init(IMG_INIT_PNG);
+
+    SDL_Surface *image;
+    image = IMG_Load("pong.png");
+    SDL_Texture* imageTexture = SDL_CreateTextureFromSurface(renderer, image);
+
+    SDL_Rect imgRect;
+    imgRect.x = 50;
+    imgRect.y = 50;
+    imgRect.w = 100;
+    imgRect.h = 50;
+
+    SDL_FillRect(image, &imgRect, SDL_MapRGB(image->format, 0, 0, 0));
+    // variables !!
     bool gameIsRunning = true;
     int linePos = 0;
-    const Uint8* keystate = SDL_GetKeyboardState(NULL);
 
-    bool isW = false;
-    bool isS = false;
+    bool inputMap[3] = {false,false,false}; // w, s
+
 
     int lastFrameTime, currentFrameTime, deltaTime;
     while(gameIsRunning){
@@ -58,36 +77,40 @@ int main(int argc, char* argv[]){
             } if (event.type == SDL_KEYDOWN) {
                 switch (event.key.keysym.sym) {
                     case SDLK_w:
-                    isW = true;
+                    inputMap[0] = true;
                     break;
 
                     case SDLK_s:
-                    isS = true;
+                    inputMap[1] = true;
                     break;
                 }
             }
             if (event.type == SDL_KEYUP) {
                 switch (event.key.keysym.sym) {
                     case SDLK_w:
-                    isW = false;
+                    inputMap[0] = false;
                     break;
                     case SDLK_s:
-                    isS = false;
+                    inputMap[1] = false;
                     break;
                 }
             }
         }   
 
-        if (isW == true) {linePos -= 1;}
-        if (isS == true) {linePos += 1;}
+        // paddle movement + boundaries
+        if (*inputMap == true) {linePos -= 1;}
+        if (*(inputMap+1) == true) {linePos += 1;}
         linePos = clamp(linePos,0,350);
 
+        // draw stuff!
         SDL_SetRenderDrawColor(renderer,0,0,0,SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
 
         SDL_SetRenderDrawColor(renderer,255,255,255,SDL_ALPHA_OPAQUE);
 
         SDL_RenderDrawLine(renderer,10,linePos,10,linePos+50);
+
+        SDL_RenderCopy(renderer,imageTexture,NULL,NULL);
 
         SDL_RenderPresent(renderer);
 
