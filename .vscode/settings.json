@@ -62,7 +62,8 @@
     "sdl.h": "c",
     "stdio.h": "c",
     "__config": "c",
-    "__nullptr": "c"
+    "__nullptr": "c",
+    "ios": "c"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

@@ -19,28 +19,33 @@ int clamp(int x,int min, int max) {
     }
     
 }
+int delta() {
+    int lastFrameTime, currentFrameTime, deltaTime;
+    lastFrameTime = currentFrameTime;
+    currentFrameTime = SDL_GetTicks();
+    deltaTime = currentFrameTime - lastFrameTime;
+    return deltaTime;
+}
 
-void renderText(char txt[10]) {
-    return;
+void reset(int *paddlePos,int *ballPosX, int *ballPosY, bool*direction) {
+    // paddlePos = 0;
+    *ballPosX = 200;
+    *ballPosY = 200;
+    *direction = true;
 }
 
 int main(int argc, char* argv[]){
 
-    Uint32 black = 255;
-
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "sdl brokey :(" <<
-                  SDL_GetError();
+            SDL_GetError();
     } else {
         std::cout << "sdl worky!\n";
     }
 
     SDL_Window* window = SDL_CreateWindow("C Pong",20, 20, 400,400,SDL_WINDOW_SHOWN);
-
-
     SDL_Renderer* renderer = nullptr;
     renderer = SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED);
-
     SDL_Surface* screenSurface = SDL_GetWindowSurface(window);
 
     IMG_Init(IMG_INIT_PNG);
@@ -48,28 +53,28 @@ int main(int argc, char* argv[]){
     SDL_Surface *image;
     image = IMG_Load("pong.png");
     SDL_Texture* imageTexture = SDL_CreateTextureFromSurface(renderer, image);
-
     SDL_Rect imgRect;
     imgRect.x = 50;
     imgRect.y = 50;
     imgRect.w = 100;
     imgRect.h = 50;
-
     SDL_FillRect(image, &imgRect, SDL_MapRGB(image->format, 0, 0, 0));
+
     // variables !!
     bool gameIsRunning = true;
+
+    const int DESIRED_FPS = 120;
+    const int FRAME_TARGET_TIME = 1000 / DESIRED_FPS;
+
     int linePos = 0;
-
     bool inputMap[3] = {false,false,false}; // w, s
+    int ballPos[2] = {200,200};
+    bool ballDir[2] = {true,true};
 
-
-    int lastFrameTime, currentFrameTime, deltaTime;
     while(gameIsRunning){
-        SDL_Event event;
+        Uint32 frameStart = SDL_GetTicks();
 
-        lastFrameTime = currentFrameTime;
-        currentFrameTime = SDL_GetTicks();
-        deltaTime = currentFrameTime - lastFrameTime;
+        SDL_Event event;
 
         while(SDL_PollEvent(&event)){
             if(event.type == SDL_QUIT){
@@ -98,8 +103,8 @@ int main(int argc, char* argv[]){
         }   
 
         // paddle movement + boundaries
-        if (*inputMap == true) {linePos -= 1;}
-        if (*(inputMap+1) == true) {linePos += 1;}
+        if (*inputMap == true) {linePos -= 2;}
+        if (*(inputMap+1) == true) {linePos += 2;}
         linePos = clamp(linePos,0,350);
 
         // draw stuff!
@@ -110,10 +115,49 @@ int main(int argc, char* argv[]){
 
         SDL_RenderDrawLine(renderer,10,linePos,10,linePos+50);
 
-        SDL_RenderCopy(renderer,imageTexture,NULL,NULL);
+        SDL_Rect ball;
+        ball.h = 5;
+        ball.w = 5;
+        ball.x = ballPos[0];
+        ball.y = ballPos[1];
+
+        if (ballPos[0] >= 400) {
+            ballDir[0] = false; 
+        } else if (ballPos[0] <= 10) {
+            if (linePos < ballPos[1] && linePos+50 > ballPos[1]) {
+                ballDir[0] = true;
+            } else {
+                reset(&linePos,&ballPos[0],&ballPos[1],&ballDir[0]);
+            }
+        }
+
+        if (ballPos[1] >= 400) {
+            ballDir[1] = false;
+        } else if (ballPos[1] <= 0) {
+            ballDir[1] = true; 
+        }
+
+        if (ballDir[0]) {
+            ballPos[0] += 2;
+        } else {
+            ballPos[0] -= 2;
+        }
+
+        if (ballDir[1]) {
+            ballPos[1] += 1;
+        } else {
+            ballPos[1] -= 1;
+        }
+
+        SDL_RenderDrawRect(renderer, &ball);
+        // SDL_RenderCopy(renderer,imageTexture,NULL,NULL);
 
         SDL_RenderPresent(renderer);
 
+        Uint32 frameTime = SDL_GetTicks() - frameStart;
+        if (FRAME_TARGET_TIME > frameTime) {
+        SDL_Delay(FRAME_TARGET_TIME - frameTime);
+}
     }
 
     SDL_DestroyWindow(window);
@@ -121,4 +165,3 @@ int main(int argc, char* argv[]){
     SDL_Quit();
     return 0;
 }
-
