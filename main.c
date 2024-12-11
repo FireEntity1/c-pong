@@ -1,10 +1,10 @@
-#include <iostream>
-
+// #include <iostream>
 #include <SDL2/SDL.h> 
 #include <stdio.h>
 #include <SDL_image.h>
+#include <SDL_mixer.h>
 
-// clang++ main.c -I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2 -I/Library/Frameworks/SDL2_image.framework/Headers  -framework SDL2_image
+// clang++ main.c -I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2 -I/Library/Frameworks/SDL2_image.framework/Headers  -framework SDL2_image -I/Library/Frameworks/SDL2_mixer.framework/Headers -framework SDL2_mixer -o c_pong
 
 int clamp(int x,int min, int max) {
     if (x<min) {
@@ -28,7 +28,7 @@ int delta() {
 }
 
 void reset(int *paddlePos,int *ballPosX, int *ballPosY, bool*direction) {
-    // paddlePos = 0;
+    // *paddlePos = 0;
     *ballPosX = 200;
     *ballPosY = 200;
     *direction = true;
@@ -37,21 +37,27 @@ void reset(int *paddlePos,int *ballPosX, int *ballPosY, bool*direction) {
 int main(int argc, char* argv[]){
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cout << "sdl brokey :(" <<
+    //     std::cout << "sdl brokey :(" <<
             SDL_GetError();
-    } else {
-        std::cout << "sdl worky!\n";
     }
+    //  else {
+    //     std::cout << "sdl worky!\n";
+    // }
 
     SDL_Window* window = SDL_CreateWindow("C Pong",20, 20, 400,400,SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = nullptr;
     renderer = SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED);
     SDL_Surface* screenSurface = SDL_GetWindowSurface(window);
 
+    SDL_Init(SDL_INIT_AUDIO);
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
     IMG_Init(IMG_INIT_PNG);
 
+    Mix_Chunk* blip = Mix_LoadWAV("blip.mp3");
+    Mix_Chunk* hit = Mix_LoadWAV("hit.mp3");
+
     SDL_Surface *image;
-    image = IMG_Load("pong.png");
+    image = IMG_Load("title.png");
     SDL_Texture* imageTexture = SDL_CreateTextureFromSurface(renderer, image);
     SDL_Rect imgRect;
     imgRect.x = 50;
@@ -62,6 +68,7 @@ int main(int argc, char* argv[]){
 
     // variables !!
     bool gameIsRunning = true;
+    bool isTitle = true;
 
     const int DESIRED_FPS = 120;
     const int FRAME_TARGET_TIME = 1000 / DESIRED_FPS;
@@ -88,6 +95,11 @@ int main(int argc, char* argv[]){
                     case SDLK_s:
                     inputMap[1] = true;
                     break;
+
+                    case SDLK_SPACE:
+                    isTitle = false;
+                    reset(&linePos,&ballPos[0],&ballPos[1],&ballDir[0]);
+                    Mix_PlayChannel(-1, blip, 0);
                 }
             }
             if (event.type == SDL_KEYUP) {
@@ -107,13 +119,6 @@ int main(int argc, char* argv[]){
         if (*(inputMap+1) == true) {linePos += 2;}
         linePos = clamp(linePos,0,350);
 
-        // draw stuff!
-        SDL_SetRenderDrawColor(renderer,0,0,0,SDL_ALPHA_OPAQUE);
-        SDL_RenderClear(renderer);
-
-        SDL_SetRenderDrawColor(renderer,255,255,255,SDL_ALPHA_OPAQUE);
-
-        SDL_RenderDrawLine(renderer,10,linePos,10,linePos+50);
 
         SDL_Rect ball;
         ball.h = 5;
@@ -123,41 +128,60 @@ int main(int argc, char* argv[]){
 
         if (ballPos[0] >= 400) {
             ballDir[0] = false; 
+            Mix_PlayChannel(-1, hit, 0);
         } else if (ballPos[0] <= 10) {
             if (linePos < ballPos[1] && linePos+50 > ballPos[1]) {
                 ballDir[0] = true;
+                Mix_PlayChannel(-1, hit, 0);
             } else {
+                isTitle = true;
                 reset(&linePos,&ballPos[0],&ballPos[1],&ballDir[0]);
             }
         }
 
         if (ballPos[1] >= 400) {
             ballDir[1] = false;
+            Mix_PlayChannel(-1, hit, 0);
         } else if (ballPos[1] <= 0) {
             ballDir[1] = true; 
+            Mix_PlayChannel(-1, hit, 0);
+        }
+        if (isTitle == false) {
+            if (ballDir[0]) {
+                ballPos[0] += 2;
+            } else {
+                ballPos[0] -= 2;
+            }
+
+            if (ballDir[1]) {
+                ballPos[1] += 1;
+            } else {
+                ballPos[1] -= 1;
+            }
+            
         }
 
-        if (ballDir[0]) {
-            ballPos[0] += 2;
-        } else {
-            ballPos[0] -= 2;
-        }
+        // draw stuff!
 
-        if (ballDir[1]) {
-            ballPos[1] += 1;
-        } else {
-            ballPos[1] -= 1;
-        }
+        SDL_SetRenderDrawColor(renderer,0,0,0,SDL_ALPHA_OPAQUE);
+        SDL_RenderClear(renderer);
+        SDL_SetRenderDrawColor(renderer,255,255,255,SDL_ALPHA_OPAQUE);
+
+        if (isTitle == true) {SDL_RenderCopy(renderer,imageTexture,NULL,NULL);}
+
+        else {
+        SDL_RenderDrawLine(renderer,10,linePos,10,linePos+50);
 
         SDL_RenderDrawRect(renderer, &ball);
-        // SDL_RenderCopy(renderer,imageTexture,NULL,NULL);
+        }
+        
 
         SDL_RenderPresent(renderer);
 
         Uint32 frameTime = SDL_GetTicks() - frameStart;
         if (FRAME_TARGET_TIME > frameTime) {
         SDL_Delay(FRAME_TARGET_TIME - frameTime);
-}
+        }
     }
 
     SDL_DestroyWindow(window);

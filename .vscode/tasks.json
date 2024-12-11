@@ -1,0 +1,36 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "C/C++: clang build active file",
+			"command": "/usr/bin/clang",
+			"args": [
+				"-fcolor-diagnostics",
+				"-fansi-escape-codes",
+				"-g",
+				"${file}",
+				"-o",
+				"${fileDirname}/${fileBasenameNoExtension}",
+				"-I/Library/Frameworks/SDL2.framework/Headers",
+				"-F/Library/Frameworks",
+				"-framework",
+				"SDL2",
+				"-I/Library/Frameworks/SDL2_image.framework/Headers",
+				"-framework",
+				"SDL2_image",
+				"-I/Library/Frameworks/SDL2_mixer.framework/Headers",
+				"-framework",
+				"SDL2_mixer"
+			],
+			"options": {
+				"cwd": "${fileDirname}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+			"detail": "compiler: /usr/bin/clang"
+		}
+	]
+}
