@@ -136,6 +136,7 @@ int main(int argc, char* argv[]){
             } else {
                 isTitle = true;
                 reset(&linePos,&ballPos[0],&ballPos[1],&ballDir[0]);
+                Mix_PlayChannel(-1, blip, 0);
             }
         }
 
